@@ -255,7 +255,7 @@ Tabel transaksi penghubung (*junction table with payload*) yang mengikat sales (
 
 ## 4. Laporan Hasil Skenario Pengujian
 
-Pengujian dilakukan menggunakan automated test framework **PHPUnit** pada Laravel 11 dengan total **22 Pengujian** dan **87 Assertions** dengan status **100% PASS**.
+Pengujian dilakukan menggunakan automated test framework **PHPUnit** dengan total **27 Pengujian** (termasuk 5 skenario suplemen RBAC, Imutabilitas, dan Validasi Server-Side) dengan status **100% PASS**.
 
 Berikut adalah laporan hasil dari minimal 10 skenario pengujian utama (mencakup kasus positif, kasus negatif, dan validasi formulir):
 
@@ -281,6 +281,11 @@ Berikut adalah laporan hasil dari minimal 10 skenario pengujian utama (mencakup 
 | **18** | **Modul Sales** | Pengujian pembaruan profil pengguna dan penghapusan akun sales. | Positif | Data profil berhasil diupdate dan akun dapat dihapus dari database. | **PASS** |
 | **19** | **Autentikasi** | Pengujian tampilan halaman login beserta tombol akses akun demo pengujian. | Positif | Halaman login memuat HTTP 200 dan merender daftar akun demonstrasi. | **PASS** |
 | **20** | **Autentikasi** | Pengujian fitur One-Click Quick-Login untuk evaluasi dan proses logout. | Positif | Pengguna berhasil terotentikasi dan sesi berhasil dihapus saat logout. | **PASS** |
+| **21** | **Suplemen SDS II.1** | **Proteksi Global `auth` Middleware**: Akses URI internal aplikasi (`/dashboard`, `/rute`, `/stores`, `/sales`) oleh pengguna tamu (*guest*). | Keamanan Negatif | Pengguna belum login otomatis ditolak dan dialihkan (`302 Redirect`) ke rute `login`. | **PASS** |
+| **22** | **Suplemen SRS I.1 & SDS II.1** | **Otorisasi Berbasis Peran (RBAC)**: Pengguna Sales mencoba mengakses manajemen pengguna (`/sales`) dan membuat toko (`/stores/create`, `POST /stores`). | Keamanan Negatif | Sistem menolak akses dengan HTTP `403 Forbidden`, dan akses ke `/dashboard` dialihkan ke `/rute`. | **PASS** |
+| **23** | **Suplemen SRS I.1 & SDS II.1** | **Data-Level Authorization (`VisitPolicy`)**: Sales 1 mencoba mengakses detail rute kunjungan milik Sales 2 (`/rute/detail/{id}`). | Keamanan Negatif | Akses kunjungan milik sales lain diblokir dengan HTTP `403 Forbidden`; hanya rute miliknya dan Admin yang dapat mengakses. | **PASS** |
+| **24** | **Suplemen SRS I.2** | **Aturan Imutabilitas & Kunci Data**: Kunjungan yang telah berstatus `Selesai` dicoba untuk di-checkin ulang atau diedit jadwalnya oleh Sales. | Keamanan & Integritas | Formulir terkunci (*read-only*), pengiriman check-in ulang dan edit jadwal oleh Sales ditolak dengan HTTP `403 Forbidden`. | **PASS** |
+| **25** | **Suplemen SRS I.3** | **Validasi Server-Side & Server Timestamp**: Pengujian validasi field `status`, aturan `nilai_pesanan` ($\ge 0$ saat Berhasil, 0/null saat Tutup/Ditolak), `catatan` wajib saat Tutup/Ditolak, dan timestamp server. | Validasi Komprehensif | Seluruh pelanggaran input ditolak dengan pesan kesalahan spesifik, input valid berhasil dan mencatat waktu server otomatis. | **PASS** |
 
 ### Cara Menjalankan Kembali Seluruh Pengujian:
 ```bash

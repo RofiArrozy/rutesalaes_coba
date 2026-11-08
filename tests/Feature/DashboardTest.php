@@ -12,6 +12,17 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+        $this->actingAs($admin);
+    }
+
     /**
      * Skenario 1: Admin Dashboard menampilkan 3 metrik wajib secara akurat:
      * (1) Total Kunjungan Selesai

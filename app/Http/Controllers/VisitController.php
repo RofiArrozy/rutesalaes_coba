@@ -9,17 +9,24 @@ use App\Models\User;
 use App\Models\Visit;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class VisitController extends Controller
 {
     /**
-     * Tampilkan daftar rute kunjungan sales dengan berbagai filter.
+     * Tampilkan daftar rute kunjungan sales dengan otorisasi data-level (RBAC).
+     * - Admin: Dapat melihat seluruh rute kunjungan semua sales.
+     * - Sales: Hanya dapat melihat daftar rute kunjungan yang ditugaskan khusus pada ID mereka.
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
         $query = Visit::with(['user', 'store']);
 
-        if ($userId = $request->input('user_id')) {
+        // Data-Level Authorization: Sales hanya dapat melihat rute kunjungan miliknya sendiri
+        if ($user && $user->isSales()) {
+            $query->where('user_id', $user->id);
+        } elseif ($userId = $request->input('user_id')) {
             $query->where('user_id', $userId);
         }
 
@@ -56,9 +63,12 @@ class VisitController extends Controller
 
     /**
      * Tampilkan formulir penjadwalan rute kunjungan baru.
+     * Hanya Admin yang berhak menjadwalkan rute baru.
      */
     public function create()
     {
+        Gate::authorize('create', Visit::class);
+
         $salesUsers = User::where('role', 'sales')->where('is_active', true)->orderBy('name')->get();
         $stores = Store::where('status', 'active')->orderBy('name')->get();
 
@@ -66,10 +76,12 @@ class VisitController extends Controller
     }
 
     /**
-     * Simpan jadwal rute baru ke database.
+     * Simpan jadwal rute baru ke database (Admin Only).
      */
     public function store(ScheduleVisitRequest $request)
     {
+        Gate::authorize('create', Visit::class);
+
         $visit = Visit::create([
             'user_id' => $request->user_id,
             'store_id' => $request->store_id,
@@ -85,14 +97,17 @@ class VisitController extends Controller
 
     /**
      * Halaman Dinamis: /rute/detail/{id}
-     * Merender data toko yang harus dikunjungi berdasarkan parameter ID pada URI,
-     * informasi jadwal kunjungan, serta formulir check-in transaksi.
+     * Diperiksa menggunakan Laravel Policy untuk memastikan Sales hanya dapat mengakses
+     * data kunjungan miliknya sendiri (Data-level Authorization).
      */
     public function detail($id)
     {
         $visit = Visit::with(['user', 'store'])->findOrFail($id);
 
-        // Ambil riwayat kunjungan sebelumnya pada toko ini (selain kunjungan saat ini)
+        // Otorisasi melalui Policy: Sales hanya boleh melihat kunjungan miliknya
+        Gate::authorize('view', $visit);
+
+        // Ambil riwayat kunjungan sebelumnya pada toko ini
         $previousVisits = Visit::with('user')
             ->where('store_id', $visit->store_id)
             ->where('id', '!=', $visit->id)
@@ -105,24 +120,53 @@ class VisitController extends Controller
 
     /**
      * Proses transaksi Formulir Check-In Kunjungan.
-     * Mengubah status dari 'Direncanakan' menjadi 'Selesai (Berhasil/Tutup/Ditolak)'.
+     * Menerapkan Aturan Imutabilitas:
+     * - Setelah status berubah menjadi 'Selesai', formulir dikunci (read-only) untuk Sales.
+     * - Perubahan data terkunci hanya dapat dilakukan oleh Admin dengan catatan log perubahan.
+     * - Waktu kunjungan diisi secara otomatis oleh server timestamp.
      */
     public function checkin(CheckInVisitRequest $request, $id)
     {
         $visit = Visit::with('store')->findOrFail($id);
+        $user = auth()->user();
 
-        $resultStatus = $request->input('result_status');
-        $orderValue = $resultStatus === 'Berhasil' ? (float) $request->input('order_value', 0) : 0.00;
-        $failReason = $resultStatus !== 'Berhasil' ? $request->input('fail_reason') : null;
+        // Cek otorisasi Policy
+        Gate::authorize('checkin', $visit);
+
+        // Aturan Imutabilitas & Kunci Data
+        $isAlreadyCompleted = ($visit->status === 'Selesai');
+        if ($isAlreadyCompleted && $user && $user->isSales()) {
+            abort(403, 'Akses Ditolak: Kunjungan ini telah selesai dan dikunci (read-only). Data tidak dapat diubah kembali oleh Sales.');
+        }
+
+        $resultStatus = $request->input('result_status', $request->input('status'));
+        $orderValue = ($resultStatus === 'Berhasil')
+            ? (float) $request->input('order_value', $request->input('nilai_pesanan', 0))
+            : 0.00;
+
+        $failReason = ($resultStatus !== 'Berhasil')
+            ? $request->input('fail_reason', $request->input('catatan'))
+            : null;
+
+        // Waktu kunjungan diisi secara otomatis oleh sistem (timestamp server) saat formulir berhasil dikirim
+        $serverTimestamp = Carbon::now();
+
+        $notes = $request->input('notes', $request->input('catatan'));
+
+        // Riwayat log jika perubahan dilakukan oleh Admin pada kunjungan yang sudah terkunci
+        if ($isAlreadyCompleted && $user && $user->isAdmin()) {
+            $adminLog = "\n[Log Perubahan Admin: " . $user->name . " pada " . $serverTimestamp->format('d/m/Y H:i:s') . "]";
+            $notes = $notes ? ($notes . $adminLog) : $adminLog;
+        }
 
         // Update kunjungan
         $visit->update([
             'status' => 'Selesai',
             'result_status' => $resultStatus,
-            'check_in_time' => $request->input('check_in_time'),
+            'check_in_time' => $serverTimestamp,
             'order_value' => $orderValue,
             'fail_reason' => $failReason,
-            'notes' => $request->input('notes'),
+            'notes' => $notes,
             'simulated_latitude' => $request->input('simulated_latitude'),
             'simulated_longitude' => $request->input('simulated_longitude'),
         ]);
@@ -141,6 +185,9 @@ class VisitController extends Controller
     public function edit($id)
     {
         $visit = Visit::with(['user', 'store'])->findOrFail($id);
+
+        Gate::authorize('update', $visit);
+
         $salesUsers = User::where('role', 'sales')->where('is_active', true)->orderBy('name')->get();
         $stores = Store::orderBy('name')->get();
 
@@ -153,6 +200,9 @@ class VisitController extends Controller
     public function update(ScheduleVisitRequest $request, $id)
     {
         $visit = Visit::findOrFail($id);
+
+        Gate::authorize('update', $visit);
+
         $visit->update([
             'user_id' => $request->user_id,
             'store_id' => $request->store_id,
@@ -165,11 +215,14 @@ class VisitController extends Controller
     }
 
     /**
-     * Hapus jadwal rute kunjungan.
+     * Hapus jadwal rute kunjungan (Admin Only).
      */
     public function destroy($id)
     {
         $visit = Visit::findOrFail($id);
+
+        Gate::authorize('delete', $visit);
+
         $storeName = $visit->store->name ?? 'Toko';
         $visit->delete();
 

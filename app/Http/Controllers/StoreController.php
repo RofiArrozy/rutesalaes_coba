@@ -43,18 +43,26 @@ class StoreController extends Controller
     }
 
     /**
-     * Tampilkan formulir tambah toko baru.
+     * Tampilkan formulir tambah toko baru (Hanya Admin).
      */
     public function create()
     {
+        if (! auth()->user() || ! auth()->user()->isAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Admin yang dapat menambahkan toko baru.');
+        }
+
         return view('stores.create');
     }
 
     /**
-     * Simpan data toko baru ke database.
+     * Simpan data toko baru ke database (Hanya Admin).
      */
     public function store(StoreRequest $request)
     {
+        if (! auth()->user() || ! auth()->user()->isAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Admin yang dapat menambahkan toko baru.');
+        }
+
         $store = Store::create($request->validated());
 
         return redirect()->route('stores.index')
@@ -74,20 +82,28 @@ class StoreController extends Controller
     }
 
     /**
-     * Tampilkan formulir edit toko.
+     * Tampilkan formulir edit toko (Hanya Admin).
      */
     public function edit($id)
     {
+        if (! auth()->user() || ! auth()->user()->isAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Admin yang dapat mengedit data toko.');
+        }
+
         $store = Store::findOrFail($id);
 
         return view('stores.edit', compact('store'));
     }
 
     /**
-     * Perbarui data toko di database.
+     * Perbarui data toko di database (Hanya Admin).
      */
     public function update(StoreRequest $request, $id)
     {
+        if (! auth()->user() || ! auth()->user()->isAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Admin yang dapat mengedit data toko.');
+        }
+
         $store = Store::findOrFail($id);
         $store->update($request->validated());
 
@@ -96,10 +112,14 @@ class StoreController extends Controller
     }
 
     /**
-     * Hapus data toko dari database.
+     * Hapus data toko dari database (Hanya Admin).
      */
     public function destroy($id)
     {
+        if (! auth()->user() || ! auth()->user()->isAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Admin yang dapat menghapus data toko.');
+        }
+
         $store = Store::findOrFail($id);
         $name = $store->name;
         $store->delete();

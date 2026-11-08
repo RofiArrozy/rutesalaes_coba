@@ -15,6 +15,12 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
+        // Sales tidak dapat mengakses dashboard analitik Admin (SRS I.1)
+        if (auth()->check() && auth()->user()->isSales()) {
+            return redirect()->route('rute.index')
+                ->with('info', 'Selamat datang. Anda dialihkan ke Agenda Rute Kunjungan harian Anda.');
+        }
+
         $today = Carbon::today()->format('Y-m-d');
 
         // Metrik Wajib 1: Total Kunjungan Selesai

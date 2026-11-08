@@ -14,7 +14,9 @@ class AuthController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return Auth::user()->isSales()
+                ? redirect()->route('rute.index')
+                : redirect()->route('dashboard');
         }
 
         $demoUsers = User::orderBy('role', 'asc')->orderBy('id', 'asc')->get();
@@ -40,9 +42,22 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
+            $user = Auth::user();
+
+            // Jika role sales, arahkan langsung ke agenda rute yang dibolehkan
+            if ($user->isSales()) {
+                // Bersihkan intended URL jika sebelumnya mengarah ke dashboard admin
+                $intended = session()->get('url.intended');
+                if ($intended && (str_contains($intended, 'dashboard') || str_contains($intended, 'sales') || str_contains($intended, 'stores/create'))) {
+                    session()->forget('url.intended');
+                }
+
+                return redirect()->intended(route('rute.index'))
+                    ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
+            }
 
             return redirect()->intended(route('dashboard'))
-                ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
+                ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
         }
 
         return back()->withErrors([
@@ -58,6 +73,11 @@ class AuthController extends Controller
         $user = User::findOrFail($id);
         Auth::login($user);
         request()->session()->regenerate();
+
+        if ($user->isSales()) {
+            return redirect()->route('rute.index')
+                ->with('success', "Beralih akun ke {$user->name} ({$user->role}) berhasil.");
+        }
 
         return redirect()->route('dashboard')
             ->with('success', "Beralih akun ke {$user->name} ({$user->role}) berhasil.");

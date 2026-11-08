@@ -8,7 +8,16 @@ use Tests\TestCase;
 
 class StoreTest extends TestCase
 {
-    use RefreshDatabase;
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $admin = \App\Models\User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+        $this->actingAs($admin);
+    }
 
     /**
      * Skenario 3: Daftar toko/warung dapat ditampilkan dan dicari dengan benar.

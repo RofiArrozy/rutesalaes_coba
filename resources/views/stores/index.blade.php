@@ -4,12 +4,14 @@
             <h1 class="text-2xl font-bold text-slate-900">Pengelolaan Toko &amp; Warung</h1>
             <p class="text-sm text-slate-500 mt-1">Daftar toko/warung mitra yang terdaftar dalam rute distribusi sales.</p>
         </div>
-        <a href="{{ route('stores.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Tambah Toko Baru
-        </a>
+        @if(!auth()->check() || auth()->user()->isAdmin())
+            <a href="{{ route('stores.create') }}" class="min-h-[48px] inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Tambah Toko Baru
+            </a>
+        @endif
     </div>
 
     <!-- Filter & Search Bar -->
@@ -81,19 +83,21 @@
                                 {{ $store->visits_count }} kali
                             </td>
                             <td class="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
-                                <a href="{{ route('stores.show', $store->id) }}" class="inline-flex px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors">
+                                <a href="{{ route('stores.show', $store->id) }}" class="inline-flex items-center justify-center min-h-[38px] px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors">
                                     Detail
                                 </a>
-                                <a href="{{ route('stores.edit', $store->id) }}" class="inline-flex px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors">
-                                    Edit
-                                </a>
-                                <form action="{{ route('stores.destroy', $store->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus toko {{ $store->name }}?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="inline-flex px-2.5 py-1 text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors">
-                                        Hapus
-                                    </button>
-                                </form>
+                                @if(!auth()->check() || auth()->user()->isAdmin())
+                                    <a href="{{ route('stores.edit', $store->id) }}" class="inline-flex items-center justify-center min-h-[38px] px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors">
+                                        Edit
+                                    </a>
+                                    <form action="{{ route('stores.destroy', $store->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus toko {{ $store->name }}?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center justify-center min-h-[38px] px-3 py-1.5 text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @empty
