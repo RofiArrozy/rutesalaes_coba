@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Order;
+use App\Models\RouteVisit;
+use App\Models\Sales;
+use App\Models\SalesRoute;
 use App\Models\Store;
 use App\Models\User;
-use App\Models\Visit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,53 +15,78 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $admin;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->admin = User::factory()->admin()->create();
+    }
+
     /**
-     * Skenario 1: Admin Dashboard menampilkan 3 metrik wajib secara akurat:
+     * TC-20: Dashboard Admin menampilkan 3 metrik wajib secara akurat dari basis data:
      * (1) Total Kunjungan Selesai
      * (2) Persentase Keberhasilan Kunjungan
      * (3) Total Nilai Pesanan
      */
     public function test_dashboard_displays_three_required_metrics_correctly(): void
     {
-        $sales = User::factory()->sales()->create(['name' => 'Sales Budi']);
+        $salesUser = User::factory()->sales()->create(['name' => 'Sales Budi']);
+        $sales = Sales::factory()->create(['user_id' => $salesUser->id, 'name' => $salesUser->name]);
+
         $store1 = Store::factory()->create(['name' => 'Toko Berkah']);
         $store2 = Store::factory()->create(['name' => 'Warung Madura']);
         $store3 = Store::factory()->create(['name' => 'Grosir Maju']);
         $store4 = Store::factory()->create(['name' => 'Kios Lestari']);
 
-        // 1 kunjungan Berhasil senilai Rp 2.500.000
-        Visit::factory()->completedSuccess()->create([
-            'user_id' => $sales->id,
+        $route = SalesRoute::factory()->create(['sales_id' => $sales->id]);
+
+        // 1 kunjungan Berhasil dengan Order senilai Rp 2.500.000
+        $visit1 = RouteVisit::create([
+            'sales_route_id' => $route->id,
             'store_id' => $store1->id,
-            'order_value' => 2500000.00,
+            'sequence' => 1,
+            'result' => 'successful',
+            'checked_in_at' => now(),
+        ]);
+        Order::create([
+            'route_visit_id' => $visit1->id,
+            'order_number' => 'ORD-TEST-001',
+            'total_amount' => 2500000.00,
         ]);
 
-        // 1 kunjungan Berhasil senilai Rp 1.500.000
-        Visit::factory()->completedSuccess()->create([
-            'user_id' => $sales->id,
+        // 1 kunjungan Berhasil dengan Order senilai Rp 1.500.000
+        $visit2 = RouteVisit::create([
+            'sales_route_id' => $route->id,
             'store_id' => $store2->id,
-            'order_value' => 1500000.00,
+            'sequence' => 2,
+            'result' => 'successful',
+            'checked_in_at' => now(),
+        ]);
+        Order::create([
+            'route_visit_id' => $visit2->id,
+            'order_number' => 'ORD-TEST-002',
+            'total_amount' => 1500000.00,
         ]);
 
         // 1 kunjungan Tutup (Rp 0)
-        Visit::factory()->completedClosed()->create([
-            'user_id' => $sales->id,
+        RouteVisit::create([
+            'sales_route_id' => $route->id,
             'store_id' => $store3->id,
-            'order_value' => 0.00,
+            'sequence' => 3,
+            'result' => 'store_closed',
+            'failure_reason' => 'Toko tutup',
+            'checked_in_at' => now(),
         ]);
 
         // 1 kunjungan Ditolak (Rp 0)
-        Visit::factory()->completedRejected()->create([
-            'user_id' => $sales->id,
+        RouteVisit::create([
+            'sales_route_id' => $route->id,
             'store_id' => $store4->id,
-            'order_value' => 0.00,
-        ]);
-
-        // 1 kunjungan Direncanakan (belum selesai)
-        Visit::factory()->create([
-            'user_id' => $sales->id,
-            'store_id' => $store1->id,
-            'status' => 'Direncanakan',
+            'sequence' => 4,
+            'result' => 'failed',
+            'failure_reason' => 'Ditolak pemilik',
+            'checked_in_at' => now(),
         ]);
 
         // Total Selesai: 4
@@ -66,7 +94,7 @@ class DashboardTest extends TestCase
         // Persentase Keberhasilan: (2 / 4) * 100% = 50%
         // Total Nilai Pesanan: 2.500.000 + 1.500.000 = 4.000.000
 
-        $response = $this->get(route('dashboard'));
+        $response = $this->actingAs($this->admin)->get(route('dashboard'));
 
         $response->assertStatus(200);
         $response->assertSee('Total Kunjungan Selesai');
@@ -78,25 +106,28 @@ class DashboardTest extends TestCase
     }
 
     /**
-     * Skenario 2: Admin Dashboard menampilkan daftar kunjungan terkini dan status operasional.
+     * TC-21: Dashboard saat data kosong -> nilai 0 dan tidak terjadi pembagian nol (division by zero).
      */
-    public function test_dashboard_displays_recent_visits_and_operational_stats(): void
+    public function test_dashboard_with_zero_visits_handles_division_by_zero(): void
     {
-        $sales = User::factory()->sales()->create(['name' => 'Ahmad Fauzi']);
-        $store = Store::factory()->create(['name' => 'Toko Sumber Rejeki']);
-
-        Visit::factory()->completedSuccess()->create([
-            'user_id' => $sales->id,
-            'store_id' => $store->id,
-            'order_value' => 1750000.00,
-        ]);
-
-        $response = $this->get(route('dashboard'));
+        $response = $this->actingAs($this->admin)->get(route('dashboard'));
 
         $response->assertStatus(200);
-        $response->assertSee('Toko Sumber Rejeki');
-        $response->assertSee('Ahmad Fauzi');
-        $response->assertSee('Aktivitas Kunjungan Terbaru');
+        $response->assertSee('0 Kunjungan');
+        $response->assertSee('0%');
+        $response->assertSee('Rp 0');
+    }
+
+    /**
+     * TC-23: Pagination berfungsi saat data toko melebihi batas halaman.
+     */
+    public function test_stores_pagination_renders_when_data_exceeds_limit(): void
+    {
+        Store::factory()->count(15)->create();
+
+        $response = $this->actingAs($this->admin)->get(route('stores.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Next');
     }
 }
-

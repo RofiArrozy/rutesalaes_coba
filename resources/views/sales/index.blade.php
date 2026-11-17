@@ -46,7 +46,7 @@
                         <th class="px-5 py-3.5">Email &amp; No. HP</th>
                         <th class="px-5 py-3.5">Role</th>
                         <th class="px-5 py-3.5">Status</th>
-                        <th class="px-5 py-3.5">Total Tugas Kunjungan</th>
+                        <th class="px-5 py-3.5">Penugasan Rute</th>
                         <th class="px-5 py-3.5 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -67,10 +67,16 @@
                                 <x-badge :status="$user->role" />
                             </td>
                             <td class="px-5 py-4">
-                                <x-badge :status="$user->is_active ? 'Aktif' : 'Non-Aktif'" />
+                                <x-badge :status="$user->is_active ? 'active' : 'inactive'" />
                             </td>
                             <td class="px-5 py-4 text-slate-700 font-semibold">
-                                {{ $user->visits_count }} rute
+                                @if($user->sales)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
+                                        {{ $user->sales->routes->count() }} rute aktif
+                                    </span>
+                                @else
+                                    <span class="text-xs text-slate-400">-</span>
+                                @endif
                             </td>
                             <td class="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
                                 <a href="{{ route('quick.login', $user->id) }}" title="Masuk sebagai akun ini" class="inline-flex px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
@@ -82,7 +88,7 @@
                                 <a href="{{ route('sales.edit', $user->id) }}" class="inline-flex px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors">
                                     Edit
                                 </a>
-                                <form action="{{ route('sales.destroy', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun {{ $user->name }}?');">
+                                <form action="{{ route('sales.destroy', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan/menghapus akun {{ $user->name }}?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="inline-flex px-2.5 py-1 text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors">
@@ -109,4 +115,3 @@
         @endif
     </div>
 </x-layout>
-

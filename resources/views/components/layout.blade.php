@@ -32,7 +32,7 @@
     <!-- Alpine.js for lightweight UI interactivity -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     
-    <!-- Google Font Inter -->
+    <!-- Google Font Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -64,40 +64,68 @@
 
             <!-- Navigation Links -->
             <div class="mt-6 flex-grow flex flex-col px-4 space-y-1.5">
-                <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                    </svg>
-                    Dashboard Admin
-                </a>
+                @if(auth()->check() && auth()->user()->isSales())
+                    <!-- Menu Khusus Sales Lapangan -->
+                    <div class="px-3 py-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Menu Sales</span>
+                    </div>
+                    <a href="{{ route('my-visits.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('my-visits.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        Kunjungan Saya
+                    </a>
+                @endif
 
-                <a href="{{ route('rute.index') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('rute.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                    </svg>
-                    Rute Kunjungan
-                </a>
+                @if(auth()->check() && auth()->user()->isAdmin())
+                    <!-- Menu Khusus Administrator -->
+                    <div class="px-3 py-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Menu Administrator</span>
+                    </div>
+                    <a href="{{ route('dashboard') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        Dashboard
+                    </a>
 
-                <a href="{{ route('stores.index') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('stores.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                    Daftar Toko / Warung
-                </a>
+                    <a href="{{ route('rute.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('rute.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                        </svg>
+                        Kelola Rute
+                    </a>
 
-                <a href="{{ route('sales.index') }}" 
-                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('sales.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                    </svg>
-                    Tim Sales & Admin
-                </a>
+                    <a href="{{ route('stores.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('stores.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        Master Toko
+                    </a>
+
+                    <a href="{{ route('sales.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('sales.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        Master Sales & User
+                    </a>
+
+                    <a href="{{ route('reports.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all {{ request()->routeIs('reports.*') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Laporan Rekap
+                    </a>
+                @endif
 
                 <div class="pt-4 pb-2 px-3">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Demo Rute Langsung</p>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pintasan Evaluasi</p>
                 </div>
 
                 <a href="{{ url('/rute/detail/1') }}" 
@@ -119,7 +147,9 @@
                             </div>
                             <div class="overflow-hidden">
                                 <p class="text-xs font-bold text-white truncate">{{ auth()->check() ? auth()->user()->name : 'Tamu (Evaluator)' }}</p>
-                                <p class="text-[10px] text-blue-400 capitalize font-medium">{{ auth()->check() ? auth()->user()->role : 'Mode Akses Cepat' }}</p>
+                                <span class="inline-block px-1.5 py-0.2 text-[10px] font-bold uppercase rounded {{ auth()->check() && auth()->user()->isAdmin() ? 'bg-purple-900/60 text-purple-300' : 'bg-emerald-900/60 text-emerald-300' }}">
+                                    {{ auth()->check() ? auth()->user()->role : 'guest' }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -129,8 +159,8 @@
                         <span class="text-slate-400 text-[10px]">Pindah:</span>
                         <div class="flex items-center gap-1.5">
                             <a href="{{ route('quick.login', 1) }}" title="Login Admin" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-blue-600 text-white text-[10px] transition-colors">Admin</a>
-                            <a href="{{ route('quick.login', 2) }}" title="Login Sales 1" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-emerald-600 text-white text-[10px] transition-colors">Sales 1</a>
-                            <a href="{{ route('quick.login', 3) }}" title="Login Sales 2" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-emerald-600 text-white text-[10px] transition-colors">Sales 2</a>
+                            <a href="{{ route('quick.login', 2) }}" title="Login Sales Budi" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-emerald-600 text-white text-[10px] transition-colors">Budi</a>
+                            <a href="{{ route('quick.login', 3) }}" title="Login Sales Siti" class="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-emerald-600 text-white text-[10px] transition-colors">Siti</a>
                         </div>
                     </div>
                 </div>
@@ -164,15 +194,21 @@
 
         <!-- Mobile Dropdown Menu -->
         <div x-show="mobileMenuOpen" @click.away="mobileMenuOpen = false" class="border-t border-slate-800 px-4 py-3 space-y-2 bg-slate-900">
-            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Dashboard</a>
-            <a href="{{ route('rute.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Rute Kunjungan</a>
-            <a href="{{ route('stores.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Data Toko</a>
-            <a href="{{ route('sales.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Tim Sales</a>
+            @if(auth()->check() && auth()->user()->isSales())
+                <a href="{{ route('my-visits.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-emerald-400 hover:bg-slate-800">Kunjungan Saya</a>
+            @endif
+            @if(auth()->check() && auth()->user()->isAdmin())
+                <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Dashboard</a>
+                <a href="{{ route('rute.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Kelola Rute</a>
+                <a href="{{ route('stores.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Master Toko</a>
+                <a href="{{ route('sales.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Master Sales</a>
+                <a href="{{ route('reports.index') }}" class="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800">Laporan Rekap</a>
+            @endif
             <div class="pt-2 border-t border-slate-800 flex items-center gap-2">
                 <span class="text-xs text-slate-400">Pindah Akun:</span>
                 <a href="{{ route('quick.login', 1) }}" class="text-xs bg-blue-600 px-2 py-1 rounded text-white font-medium">Admin</a>
-                <a href="{{ route('quick.login', 2) }}" class="text-xs bg-emerald-600 px-2 py-1 rounded text-white font-medium">Sales 1</a>
-                <a href="{{ route('quick.login', 3) }}" class="text-xs bg-emerald-600 px-2 py-1 rounded text-white font-medium">Sales 2</a>
+                <a href="{{ route('quick.login', 2) }}" class="text-xs bg-emerald-600 px-2 py-1 rounded text-white font-medium">Budi</a>
+                <a href="{{ route('quick.login', 3) }}" class="text-xs bg-emerald-600 px-2 py-1 rounded text-white font-medium">Siti</a>
             </div>
         </div>
     </header>
@@ -188,7 +224,7 @@
             <div class="flex items-center gap-4">
                 <!-- Role Switcher Quick Pill -->
                 <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
-                    <span class="px-2 text-slate-400">Beralih Role:</span>
+                    <span class="px-2 text-slate-400">Beralih Akun:</span>
                     <a href="{{ route('quick.login', 1) }}" class="px-2.5 py-1 rounded-lg {{ auth()->id() == 1 ? 'bg-blue-600 text-white shadow-xs' : 'hover:bg-white text-slate-700' }}">Admin</a>
                     <a href="{{ route('quick.login', 2) }}" class="px-2.5 py-1 rounded-lg {{ auth()->id() == 2 ? 'bg-blue-600 text-white shadow-xs' : 'hover:bg-white text-slate-700' }}">Sales Budi</a>
                     <a href="{{ route('quick.login', 3) }}" class="px-2.5 py-1 rounded-lg {{ auth()->id() == 3 ? 'bg-blue-600 text-white shadow-xs' : 'hover:bg-white text-slate-700' }}">Sales Siti</a>
@@ -228,12 +264,21 @@
 <!-- Mobile Bottom Navigation Bar -->
 <div class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 px-4 py-2 z-30 shadow-lg">
     <div class="grid grid-cols-4 gap-1 text-center">
-        <a href="{{ route('dashboard') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('dashboard') ? 'text-blue-600 font-bold' : 'text-slate-500' }}">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-            </svg>
-            <span class="text-[10px] mt-0.5">Home</span>
-        </a>
+        @if(auth()->check() && auth()->user()->isSales())
+            <a href="{{ route('my-visits.index') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('my-visits.*') ? 'text-blue-600 font-bold' : 'text-slate-500' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                <span class="text-[10px] mt-0.5">Tugas Saya</span>
+            </a>
+        @else
+            <a href="{{ route('dashboard') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('dashboard') ? 'text-blue-600 font-bold' : 'text-slate-500' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="text-[10px] mt-0.5">Home</span>
+            </a>
+        @endif
 
         <a href="{{ route('rute.index') }}" class="flex flex-col items-center py-1 {{ request()->routeIs('rute.*') ? 'text-blue-600 font-bold' : 'text-slate-500' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,4 +305,3 @@
 
 </body>
 </html>
-

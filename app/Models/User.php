@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -51,11 +51,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Relasi ke data kunjungan sales.
+     * Relasi ke profil sales.
      */
-    public function visits(): HasMany
+    public function sales(): HasOne
     {
-        return $this->hasMany(Visit::class);
+        return $this->hasOne(Sales::class);
     }
 
     /**

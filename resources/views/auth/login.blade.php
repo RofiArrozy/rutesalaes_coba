@@ -67,7 +67,7 @@
                     <input type="checkbox" name="remember" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
                     <span class="text-slate-600">Ingat Saya</span>
                 </label>
-                <span class="text-slate-400">Password default: <code class="text-slate-700 font-bold">password</code></span>
+                <span class="text-slate-400">Password: <code class="text-slate-700 font-bold">password</code></span>
             </div>
 
             <button type="submit" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-md shadow-blue-500/25 transition-all mt-2">
@@ -82,20 +82,20 @@
             </p>
             <div class="grid grid-cols-2 gap-2">
                 <a href="{{ route('quick.login', 1) }}" class="p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-200 text-center transition-colors">
-                    <span class="block text-xs font-bold text-slate-800">Admin Pusat</span>
+                    <span class="block text-xs font-bold text-slate-800">Admin Utama</span>
                     <span class="block text-[10px] text-blue-600">admin@rutesales.com</span>
                 </a>
                 <a href="{{ route('quick.login', 2) }}" class="p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-100 hover:border-emerald-200 text-center transition-colors">
                     <span class="block text-xs font-bold text-slate-800">Sales Budi</span>
-                    <span class="block text-[10px] text-emerald-600">sales1@rutesales.com</span>
+                    <span class="block text-[10px] text-emerald-600">budi@rutesales.com</span>
                 </a>
                 <a href="{{ route('quick.login', 3) }}" class="p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-100 hover:border-emerald-200 text-center transition-colors">
                     <span class="block text-xs font-bold text-slate-800">Sales Siti</span>
-                    <span class="block text-[10px] text-emerald-600">sales2@rutesales.com</span>
+                    <span class="block text-[10px] text-emerald-600">siti@rutesales.com</span>
                 </a>
                 <a href="{{ route('quick.login', 4) }}" class="p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-100 hover:border-emerald-200 text-center transition-colors">
                     <span class="block text-xs font-bold text-slate-800">Sales Fauzi</span>
-                    <span class="block text-[10px] text-emerald-600">sales3@rutesales.com</span>
+                    <span class="block text-[10px] text-emerald-600">fauzi@rutesales.com</span>
                 </a>
             </div>
         </div>
@@ -104,4 +104,3 @@
 
 </body>
 </html>
-

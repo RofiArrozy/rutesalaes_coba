@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Sales;
+use App\Models\SalesRoute;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -10,10 +12,18 @@ class SalesUserTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $admin;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->admin = User::factory()->admin()->create();
+    }
+
     /**
-     * Skenario 16: Pengelolaan Sales (CRUD) - Pembuatan sales baru berhasil dengan data valid.
+     * TC-03: Admin membuat sales valid, tersimpan dan profil sales otomatis terbuat.
      */
-    public function test_sales_user_creation_succeeds(): void
+    public function test_admin_can_create_valid_sales_user(): void
     {
         $payload = [
             'name' => 'Doni Darmawan',
@@ -21,66 +31,48 @@ class SalesUserTest extends TestCase
             'password' => 'secret123',
             'role' => 'sales',
             'phone' => '081234567890',
-            'employee_code' => 'SLS-505',
+            'employee_code' => 'SLS-999',
             'is_active' => '1',
         ];
 
-        $response = $this->post(route('sales.store'), $payload);
+        $response = $this->actingAs($this->admin)->post(route('sales.store'), $payload);
 
         $response->assertRedirect(route('sales.index'));
-        $this->assertDatabaseHas('users', [
-            'name' => 'Doni Darmawan',
-            'email' => 'doni@rutesales.com',
-            'role' => 'sales',
-            'employee_code' => 'SLS-505',
-            'is_active' => true,
-        ]);
+        $this->assertDatabaseHas('users', ['email' => 'doni@rutesales.com', 'name' => 'Doni Darmawan']);
+        $this->assertDatabaseHas('sales', ['name' => 'Doni Darmawan', 'employee_code' => 'SLS-999', 'status' => 'active']);
     }
 
     /**
-     * Skenario 17 (Kasus Form Tidak Valid): Pembuatan sales gagal jika format email duplikat atau password terlalu pendek.
+     * TC-04: Nama sales kosong -> validasi gagal, tidak tersimpan.
      */
-    public function test_sales_user_creation_fails_with_duplicate_email_and_short_password(): void
+    public function test_sales_creation_fails_when_name_is_empty(): void
     {
-        User::factory()->create(['email' => 'existing@rutesales.com']);
-
         $payload = [
-            'name' => 'Sales Baru',
-            'email' => 'existing@rutesales.com', // duplikat
-            'password' => '123', // kurang dari 6 karakter
+            'name' => '',
+            'email' => 'sales_noname@rutesales.com',
+            'password' => 'secret123',
             'role' => 'sales',
         ];
 
-        $response = $this->post(route('sales.store'), $payload);
+        $response = $this->actingAs($this->admin)->post(route('sales.store'), $payload);
 
-        $response->assertSessionHasErrors(['email', 'password']);
+        $response->assertSessionHasErrors(['name']);
+        $this->assertDatabaseMissing('users', ['email' => 'sales_noname@rutesales.com']);
     }
 
     /**
-     * Skenario 18: Pengguna sales dapat diperbarui dan dihapus.
+     * Deaktivasi sales jika memiliki riwayat rute.
      */
-    public function test_sales_user_can_be_updated_and_deleted(): void
+    public function test_sales_with_routes_is_deactivated_instead_of_hard_deleted(): void
     {
-        $user = User::factory()->sales()->create([
-            'name' => 'Bambang Sudirman',
-            'email' => 'bambang@rutesales.com',
-        ]);
+        $salesUser = User::factory()->sales()->create(['name' => 'Sales Berpengalaman']);
+        $salesProfile = Sales::factory()->create(['user_id' => $salesUser->id, 'name' => $salesUser->name]);
+        SalesRoute::factory()->create(['sales_id' => $salesProfile->id]);
 
-        // Update
-        $updateResponse = $this->put(route('sales.update', $user->id), [
-            'name' => 'Bambang Sudirman SH',
-            'email' => 'bambang@rutesales.com',
-            'role' => 'sales',
-            'is_active' => '1',
-        ]);
+        $response = $this->actingAs($this->admin)->delete(route('sales.destroy', $salesUser->id));
 
-        $updateResponse->assertRedirect(route('sales.index'));
-        $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Bambang Sudirman SH']);
-
-        // Delete
-        $deleteResponse = $this->delete(route('sales.destroy', $user->id));
-        $deleteResponse->assertRedirect(route('sales.index'));
-        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $response->assertRedirect(route('sales.index'));
+        $this->assertDatabaseHas('users', ['id' => $salesUser->id, 'is_active' => false]);
+        $this->assertDatabaseHas('sales', ['id' => $salesProfile->id, 'status' => 'inactive']);
     }
 }
-

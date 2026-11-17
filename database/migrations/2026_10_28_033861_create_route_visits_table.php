@@ -11,20 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('visits', function (Blueprint $table) {
+        Schema::create('route_visits', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('sales_route_id')->constrained('sales_routes')->onDelete('cascade');
             $table->foreignId('store_id')->constrained('stores')->onDelete('cascade');
-            $table->date('visit_date');
-            $table->string('status')->default('Direncanakan'); // Direncanakan, Selesai, Dibatalkan
-            $table->string('result_status')->nullable(); // Berhasil, Tutup, Ditolak
-            $table->dateTime('check_in_time')->nullable();
-            $table->decimal('order_value', 15, 2)->default(0.00);
-            $table->text('fail_reason')->nullable();
+            $table->unsignedInteger('sequence');
+            $table->string('result')->nullable(); // successful, store_closed, failed
+            $table->dateTime('checked_in_at')->nullable();
             $table->text('notes')->nullable();
+            $table->text('failure_reason')->nullable();
             $table->decimal('simulated_latitude', 10, 7)->nullable();
             $table->decimal('simulated_longitude', 10, 7)->nullable();
             $table->timestamps();
+
+            $table->unique(['sales_route_id', 'sequence']);
+            $table->unique(['sales_route_id', 'store_id']);
         });
     }
 
@@ -33,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('visits');
+        Schema::dropIfExists('route_visits');
     }
 };

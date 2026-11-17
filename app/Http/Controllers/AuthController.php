@@ -14,10 +14,12 @@ class AuthController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return Auth::user()->isAdmin()
+                ? redirect()->route('dashboard')
+                : redirect()->route('my-visits.index');
         }
 
-        $demoUsers = User::orderBy('role', 'asc')->orderBy('id', 'asc')->get();
+        $demoUsers = User::with('sales')->orderBy('role', 'asc')->orderBy('id', 'asc')->get();
 
         return view('auth.login', compact('demoUsers'));
     }
@@ -40,9 +42,12 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
+            $user = Auth::user();
 
-            return redirect()->intended(route('dashboard'))
-                ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
+            $targetRoute = $user->isAdmin() ? route('dashboard') : route('my-visits.index');
+
+            return redirect()->intended($targetRoute)
+                ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
         }
 
         return back()->withErrors([
@@ -59,7 +64,9 @@ class AuthController extends Controller
         Auth::login($user);
         request()->session()->regenerate();
 
-        return redirect()->route('dashboard')
+        $targetRoute = $user->isAdmin() ? route('dashboard') : route('my-visits.index');
+
+        return redirect($targetRoute)
             ->with('success', "Beralih akun ke {$user->name} ({$user->role}) berhasil.");
     }
 

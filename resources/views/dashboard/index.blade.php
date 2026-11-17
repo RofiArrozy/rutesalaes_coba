@@ -4,7 +4,7 @@
         <div>
             <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Dashboard Pemantauan Kunjungan</h1>
             <p class="text-sm text-slate-500 mt-1">
-                Ringkasan metrik real-time efektivitas kunjungan sales lapangan dan nilai transaksi pesanan.
+                Ringkasan metrik real-time efektivitas kunjungan sales lapangan dan nilai transaksi pesanan dari basis data.
             </p>
         </div>
         <div class="flex items-center gap-2.5">
@@ -12,7 +12,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                Jadwalkan Rute
+                Buat Rute Baru
             </a>
             <a href="{{ route('stores.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-semibold shadow-xs transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,16 +20,22 @@
                 </svg>
                 Tambah Toko
             </a>
+            <a href="{{ route('reports.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-semibold shadow-xs transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Laporan Rekap
+            </a>
         </div>
     </div>
 
-    <!-- Tiga Metrik Utama Persyaratan Proyek -->
+    <!-- Tiga Metrik Utama Persyaratan Proyek (FR-15, TC-20, TC-21) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
         <!-- Metrik 1: Total Kunjungan Selesai -->
         <x-stat-card 
             title="Total Kunjungan Selesai" 
             value="{{ number_format($totalCompletedVisits) }} Kunjungan" 
-            subtitle="Dari {{ $totalCompletedVisits + $totalPlannedVisits }} total agenda jadwal"
+            subtitle="Dari {{ $totalCompletedVisits + $totalPlannedVisits }} total titik kunjungan"
             color="indigo" 
             icon="check" 
         />
@@ -47,7 +53,7 @@
         <x-stat-card 
             title="Total Nilai Pesanan" 
             value="Rp {{ number_format($totalOrderValue, 0, ',', '.') }}" 
-            subtitle="Akumulasi omzet tercatat dari toko closing"
+            subtitle="Akumulasi omzet tercatat dari pesanan toko"
             color="blue" 
             icon="currency" 
         />
@@ -77,7 +83,7 @@
 
         <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs text-slate-400 font-medium">Ditolak</p>
+                <p class="text-xs text-slate-400 font-medium">Ditolak / Gagal</p>
                 <p class="text-xl font-bold text-rose-600 mt-0.5">{{ $totalRejectedVisits }}</p>
             </div>
             <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
@@ -87,7 +93,7 @@
 
         <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs text-slate-400 font-medium">Direncanakan</p>
+                <p class="text-xs text-slate-400 font-medium">Belum Check-in</p>
                 <p class="text-xl font-bold text-blue-600 mt-0.5">{{ $totalPlannedVisits }}</p>
             </div>
             <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
@@ -118,7 +124,7 @@
                         <tr>
                             <th class="px-5 py-3.5">Toko / Warung</th>
                             <th class="px-5 py-3.5">Sales</th>
-                            <th class="px-5 py-3.5">Tanggal</th>
+                            <th class="px-5 py-3.5">Waktu Check-in</th>
                             <th class="px-5 py-3.5">Status / Hasil</th>
                             <th class="px-5 py-3.5">Nilai Order</th>
                             <th class="px-5 py-3.5 text-right">Aksi</th>
@@ -132,27 +138,31 @@
                                     <div class="text-xs text-slate-400">{{ $visit->store->area ?? 'Area belum diatur' }}</div>
                                 </td>
                                 <td class="px-5 py-3.5">
-                                    <span class="text-slate-700 font-medium">{{ $visit->user->name ?? '-' }}</span>
+                                    <span class="text-slate-700 font-medium">{{ $visit->salesRoute->sales->name ?? '-' }}</span>
                                 </td>
                                 <td class="px-5 py-3.5 text-slate-500 text-xs">
-                                    {{ \Carbon\Carbon::parse($visit->visit_date)->translatedFormat('d M Y') }}
+                                    @if($visit->checked_in_at)
+                                        {{ $visit->checked_in_at->translatedFormat('d M Y, H:i') }}
+                                    @else
+                                        {{ $visit->salesRoute->route_date->translatedFormat('d M Y') }}
+                                    @endif
                                 </td>
                                 <td class="px-5 py-3.5">
-                                    @if($visit->status === 'Selesai')
-                                        <x-badge :status="$visit->result_status" />
+                                    @if($visit->result)
+                                        <x-badge :status="$visit->result" />
                                     @else
-                                        <x-badge status="Direncanakan" />
+                                        <x-badge status="planned" />
                                     @endif
                                 </td>
                                 <td class="px-5 py-3.5 font-semibold text-slate-800">
-                                    @if($visit->result_status === 'Berhasil')
-                                        <span class="text-emerald-600">Rp {{ number_format($visit->order_value, 0, ',', '.') }}</span>
+                                    @if($visit->result === 'successful' && $visit->order)
+                                        <span class="text-emerald-600">Rp {{ number_format($visit->order->total_amount, 0, ',', '.') }}</span>
                                     @else
                                         <span class="text-slate-400">-</span>
                                     @endif
                                 </td>
                                 <td class="px-5 py-3.5 text-right">
-                                    <a href="{{ route('rute.detail', $visit->id) }}" class="inline-flex items-center px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-lg transition-colors">
+                                    <a href="{{ route('rute.detail', $visit->sales_route_id) }}" class="inline-flex items-center px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-lg transition-colors">
                                         Detail Rute
                                     </a>
                                 </td>
@@ -200,9 +210,9 @@
                             <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">
                                 📅
                             </div>
-                            <span class="text-sm font-medium text-slate-700">Jadwal Hari Ini</span>
+                            <span class="text-sm font-medium text-slate-700">Rute Hari Ini</span>
                         </div>
-                        <span class="text-sm font-bold text-slate-900">{{ $todayVisitsCount }}</span>
+                        <span class="text-sm font-bold text-slate-900">{{ $todayRoutesCount }}</span>
                     </div>
                 </div>
             </div>
@@ -222,8 +232,8 @@
                                 <span class="text-xs font-bold text-emerald-600">Rp {{ number_format($sales->total_revenue ?? 0, 0, ',', '.') }}</span>
                             </div>
                             <div class="flex items-center justify-between text-xs text-slate-400">
-                                <span>{{ $sales->completed_visits }} Selesai ({{ $sales->success_visits }} Sukses)</span>
-                                <span>{{ $sales->total_visits }} Total Rute</span>
+                                <span>{{ $sales->completed_visits }} Selesai ({{ $sales->success_visits }} Closing)</span>
+                                <span>{{ $sales->total_visits }} Titik Rute</span>
                             </div>
                         </div>
                     @endforeach
@@ -232,4 +242,3 @@
         </div>
     </div>
 </x-layout>
-

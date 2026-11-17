@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Sales;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -11,33 +12,54 @@ class AuthTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Skenario 19: Halaman login menampilkan antarmuka dan opsi akun demo pengujian.
+     * TC-01: Membuka dashboard tanpa login dialihkan ke login.
      */
-    public function test_login_page_renders_with_demo_accounts(): void
+    public function test_guest_accessing_dashboard_is_redirected_to_login(): void
+    {
+        $response = $this->get(route('dashboard'));
+
+        $response->assertRedirect(route('login'));
+    }
+
+    /**
+     * TC-02: Sales membuka CRUD toko ditolak/diarahkan ke halaman yang diizinkan.
+     */
+    public function test_sales_role_accessing_stores_crud_is_redirected(): void
+    {
+        $salesUser = User::factory()->sales()->create();
+        Sales::factory()->create(['user_id' => $salesUser->id, 'name' => $salesUser->name]);
+
+        $response = $this->actingAs($salesUser)->get(route('stores.index'));
+
+        // Sesuai EnsureAdmin middleware: dialihkan ke halaman Kunjungan Saya dengan pesan error
+        $response->assertRedirect(route('my-visits.index'));
+        $response->assertSessionHas('error');
+    }
+
+    /**
+     * Halaman login menampilkan form dan demo switcher.
+     */
+    public function test_login_page_renders_successfully(): void
     {
         $response = $this->get(route('login'));
 
         $response->assertStatus(200);
         $response->assertSee('Masuk ke Sistem');
-        $response->assertSee('admin@rutesales.com');
     }
 
     /**
-     * Skenario 20: Fitur Quick-Login dan Logout memungkinkan pergantian akun sales/admin secara mulus.
+     * Quick login dan logout flow.
      */
     public function test_quick_login_and_logout_flow(): void
     {
-        $sales = User::factory()->sales()->create(['name' => 'Sales Budi']);
+        $admin = User::factory()->admin()->create();
 
-        // Quick login
-        $loginResponse = $this->get(route('quick.login', $sales->id));
+        $loginResponse = $this->get(route('quick.login', $admin->id));
         $loginResponse->assertRedirect(route('dashboard'));
-        $this->assertAuthenticatedAs($sales);
+        $this->assertAuthenticatedAs($admin);
 
-        // Logout
         $logoutResponse = $this->post(route('logout'));
         $logoutResponse->assertRedirect(route('login'));
         $this->assertGuest();
     }
 }
-

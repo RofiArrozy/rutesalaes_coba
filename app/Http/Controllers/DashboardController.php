@@ -2,64 +2,71 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
+use App\Models\RouteVisit;
+use App\Models\Sales;
+use App\Models\SalesRoute;
 use App\Models\Store;
-use App\Models\User;
-use App\Models\Visit;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     /**
-     * Tampilkan halaman Dashboard Admin dengan metrik ringkasan.
+     * Tampilkan halaman Dashboard Admin dengan metrik ringkasan dari basis data aktual.
      */
     public function index(Request $request)
     {
         $today = Carbon::today()->format('Y-m-d');
 
-        // Metrik Wajib 1: Total Kunjungan Selesai
-        $totalCompletedVisits = Visit::where('status', 'Selesai')->count();
+        // Metrik Wajib 1: Total Kunjungan Selesai (FR-15, TC-20, TC-21)
+        $totalCompletedVisits = RouteVisit::whereNotNull('result')->count();
 
-        // Hitung Kunjungan Berhasil, Tutup, Ditolak
-        $totalSuccessVisits = Visit::where('status', 'Selesai')->where('result_status', 'Berhasil')->count();
-        $totalClosedVisits = Visit::where('status', 'Selesai')->where('result_status', 'Tutup')->count();
-        $totalRejectedVisits = Visit::where('status', 'Selesai')->where('result_status', 'Ditolak')->count();
+        // Rincian Hasil Kunjungan: Successful, Store Closed, Failed
+        $totalSuccessVisits = RouteVisit::where('result', 'successful')->count();
+        $totalClosedVisits = RouteVisit::where('result', 'store_closed')->count();
+        $totalRejectedVisits = RouteVisit::where('result', 'failed')->count();
 
-        // Metrik Wajib 2: Persentase Keberhasilan Kunjungan (%)
+        // Metrik Wajib 2: Persentase Keberhasilan Kunjungan (%) dengan penanganan pembagian nol (TC-21)
         $successPercentage = $totalCompletedVisits > 0
             ? round(($totalSuccessVisits / $totalCompletedVisits) * 100, 1)
             : 0;
 
-        // Metrik Wajib 3: Total Nilai Pesanan (Rp)
-        $totalOrderValue = Visit::where('result_status', 'Berhasil')->sum('order_value');
+        // Metrik Wajib 3: Total Nilai Pesanan (Rp) dari tabel orders
+        $totalOrderValue = (float) Order::sum('total_amount');
 
         // Metrik Tambahan Operasional
         $totalStores = Store::count();
-        $activeSalesCount = User::where('role', 'sales')->where('is_active', true)->count();
-        $totalPlannedVisits = Visit::where('status', 'Direncanakan')->count();
-        $todayVisitsCount = Visit::whereDate('visit_date', $today)->count();
+        $activeSalesCount = Sales::active()->count();
+        $totalPlannedVisits = RouteVisit::whereNull('result')->count();
+        $todayRoutesCount = SalesRoute::whereDate('route_date', $today)->count();
 
         // Daftar Kunjungan Terkini
-        $recentVisits = Visit::with(['user', 'store'])
-            ->orderBy('updated_at', 'desc')
+        $recentVisits = RouteVisit::with(['salesRoute.sales', 'store', 'order'])
+            ->whereNotNull('checked_in_at')
+            ->orderBy('checked_in_at', 'desc')
             ->limit(8)
             ->get();
 
         // Ringkasan Performa Sales
-        $salesPerformance = User::where('role', 'sales')
-            ->withCount([
-                'visits as total_visits',
-                'visits as completed_visits' => function ($query) {
-                    $query->where('status', 'Selesai');
-                },
-                'visits as success_visits' => function ($query) {
-                    $query->where('result_status', 'Berhasil');
-                },
-            ])
-            ->withSum(['visits as total_revenue' => function ($query) {
-                $query->where('result_status', 'Berhasil');
-            }], 'order_value')
-            ->get();
+        $salesList = Sales::with(['routes.visits.order'])->get();
+        $salesPerformance = $salesList->map(function ($s) {
+            $visits = $s->routes->flatMap->visits;
+            $completed = $visits->whereNotNull('result');
+            $success = $visits->where('result', 'successful');
+            $revenue = $success->sum(function ($v) {
+                return $v->order ? (float) $v->order->total_amount : 0;
+            });
+
+            return (object) [
+                'id' => $s->id,
+                'name' => $s->name,
+                'total_visits' => $visits->count(),
+                'completed_visits' => $completed->count(),
+                'success_visits' => $success->count(),
+                'total_revenue' => $revenue,
+            ];
+        });
 
         return view('dashboard.index', compact(
             'totalCompletedVisits',
@@ -71,7 +78,7 @@ class DashboardController extends Controller
             'totalStores',
             'activeSalesCount',
             'totalPlannedVisits',
-            'todayVisitsCount',
+            'todayRoutesCount',
             'recentVisits',
             'salesPerformance'
         ));

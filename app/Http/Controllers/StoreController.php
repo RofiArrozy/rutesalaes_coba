@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class StoreController extends Controller
 {
     /**
-     * Tampilkan daftar seluruh toko/warung dengan pencarian dan filter.
+     * Tampilkan daftar data toko/warung dengan pagination dan filter pencarian.
      */
     public function index(Request $request)
     {
@@ -19,8 +19,8 @@ class StoreController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('owner_name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('address', 'like', "%{$search}%");
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhere('area', 'like', "%{$search}%");
             });
         }
 
@@ -32,8 +32,8 @@ class StoreController extends Controller
             $query->where('status', $status);
         }
 
-        $stores = $query->withCount('visits')
-            ->orderBy('name', 'asc')
+        $stores = $query->withCount('routeVisits')
+            ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
@@ -58,16 +58,16 @@ class StoreController extends Controller
         $store = Store::create($request->validated());
 
         return redirect()->route('stores.index')
-            ->with('success', "Toko '{$store->name}' berhasil ditambahkan ke dalam sistem.");
+            ->with('success', "Data toko '{$store->name}' berhasil ditambahkan.");
     }
 
     /**
-     * Tampilkan detail toko beserta riwayat kunjungan.
+     * Tampilkan detail data toko beserta riwayat kunjungannya.
      */
     public function show($id)
     {
-        $store = Store::with(['visits.user' => function ($q) {
-            $q->orderBy('visit_date', 'desc');
+        $store = Store::with(['routeVisits.salesRoute.sales', 'routeVisits.order' => function ($q) {
+            $q->orderBy('created_at', 'desc');
         }])->findOrFail($id);
 
         return view('stores.show', compact('store'));
@@ -96,15 +96,23 @@ class StoreController extends Controller
     }
 
     /**
-     * Hapus data toko dari database.
+     * Hapus data toko atau nonaktifkan jika memiliki riwayat kunjungan.
      */
     public function destroy($id)
     {
         $store = Store::findOrFail($id);
         $name = $store->name;
+
+        if ($store->routeVisits()->exists()) {
+            $store->update(['status' => 'inactive']);
+
+            return redirect()->route('stores.index')
+                ->with('success', "Toko '{$name}' memiliki riwayat kunjungan, sehingga statusnya dinonaktifkan.");
+        }
+
         $store->delete();
 
         return redirect()->route('stores.index')
-            ->with('success', "Toko '{$name}' beserta data relasinya berhasil dihapus.");
+            ->with('success', "Toko '{$name}' berhasil dihapus dari sistem.");
     }
 }

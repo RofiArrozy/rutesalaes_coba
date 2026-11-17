@@ -6,17 +6,17 @@
             </a>
             <div class="flex items-center gap-3">
                 <h1 class="text-2xl font-bold text-slate-900">{{ $store->name }}</h1>
-                <x-badge :status="$store->status === 'active' ? 'Aktif' : 'Non-Aktif'" />
+                <x-badge :status="$store->status === 'active' ? 'active' : 'inactive'" />
             </div>
             <p class="text-sm text-slate-500 mt-1">Area Wilayah: {{ $store->area ?? 'Belum ditentukan' }}</p>
         </div>
 
         <div class="flex items-center gap-2">
-            <a href="{{ route('rute.create') }}?store_id={{ $store->id }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5">
+            <a href="{{ route('rute.create') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                Jadwalkan Kunjungan
+                Jadwalkan ke Rute
             </a>
             <a href="{{ route('stores.edit', $store->id) }}" class="px-3.5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold shadow-xs transition-all">
                 Edit Profil
@@ -35,7 +35,7 @@
                 <dl class="space-y-4 text-sm">
                     <div>
                         <dt class="text-xs text-slate-400 font-medium">Nama Pemilik</dt>
-                        <dd class="text-slate-800 font-semibold mt-0.5">{{ $store->owner_name }}</dd>
+                        <dd class="text-slate-800 font-semibold mt-0.5">{{ $store->owner_name ?? '-' }}</dd>
                     </div>
 
                     <div>
@@ -87,7 +87,7 @@
                 <div class="p-5 border-b border-slate-100 flex items-center justify-between">
                     <div>
                         <h3 class="font-bold text-slate-900 text-base">Riwayat Kunjungan ke Toko Ini</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Total {{ $store->visits->count() }} catatan kunjungan sales</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Total {{ $store->routeVisits->count() }} titik kunjungan sales</p>
                     </div>
                 </div>
 
@@ -97,38 +97,38 @@
                             <tr>
                                 <th class="px-5 py-3.5">Tanggal</th>
                                 <th class="px-5 py-3.5">Sales</th>
-                                <th class="px-5 py-3.5">Status / Hasil</th>
+                                <th class="px-5 py-3.5">Hasil</th>
                                 <th class="px-5 py-3.5">Nilai Order / Alasan</th>
                                 <th class="px-5 py-3.5 text-right">Detail</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            @forelse($store->visits as $visit)
+                            @forelse($store->routeVisits as $visit)
                                 <tr class="hover:bg-slate-50/70 transition-colors">
                                     <td class="px-5 py-3.5 font-medium text-slate-800">
-                                        {{ \Carbon\Carbon::parse($visit->visit_date)->translatedFormat('d M Y') }}
+                                        {{ $visit->salesRoute->route_date->translatedFormat('d M Y') }}
                                     </td>
                                     <td class="px-5 py-3.5 text-slate-700">
-                                        {{ $visit->user->name ?? '-' }}
+                                        {{ $visit->salesRoute->sales->name ?? '-' }}
                                     </td>
                                     <td class="px-5 py-3.5">
-                                        @if($visit->status === 'Selesai')
-                                            <x-badge :status="$visit->result_status" />
+                                        @if($visit->result)
+                                            <x-badge :status="$visit->result" />
                                         @else
-                                            <x-badge status="Direncanakan" />
+                                            <x-badge status="planned" />
                                         @endif
                                     </td>
                                     <td class="px-5 py-3.5">
-                                        @if($visit->result_status === 'Berhasil')
-                                            <span class="font-bold text-emerald-600 text-xs">Rp {{ number_format($visit->order_value, 0, ',', '.') }}</span>
-                                        @elseif($visit->fail_reason)
-                                            <span class="text-xs text-slate-500 line-clamp-1 italic">{{ $visit->fail_reason }}</span>
+                                        @if($visit->result === 'successful' && $visit->order)
+                                            <span class="font-bold text-emerald-600 text-xs">Rp {{ number_format($visit->order->total_amount, 0, ',', '.') }}</span>
+                                        @elseif($visit->failure_reason)
+                                            <span class="text-xs text-slate-500 line-clamp-1 italic">{{ $visit->failure_reason }}</span>
                                         @else
                                             <span class="text-xs text-slate-400">-</span>
                                         @endif
                                     </td>
                                     <td class="px-5 py-3.5 text-right">
-                                        <a href="{{ route('rute.detail', $visit->id) }}" class="inline-flex px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors">
+                                        <a href="{{ route('rute.detail', $visit->sales_route_id) }}" class="inline-flex px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors">
                                             Buka Rute &rarr;
                                         </a>
                                     </td>
@@ -147,4 +147,3 @@
         </div>
     </div>
 </x-layout>
-
